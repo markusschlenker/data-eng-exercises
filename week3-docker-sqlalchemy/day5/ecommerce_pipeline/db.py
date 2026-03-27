@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 
+from logger import get_logger
+log = get_logger("APP-PIPELINE")
+
 # Load .env variables
 load_dotenv()
 
@@ -28,9 +31,11 @@ def create_database_if_not_exists():
         ).fetchone()
 
         if exists:
+            log.info(f"Database '{DB_NAME}' already exists...")
             print(f"[INFO] Database '{DB_NAME}' already exists.")
         else:
             conn.execute(text(f"CREATE DATABASE {DB_NAME}"))
+            log.info(f"Database '{DB_NAME}' created.")
             print(f"[INFO] Database '{DB_NAME}' created.")
 
 # Create engine for actual DB

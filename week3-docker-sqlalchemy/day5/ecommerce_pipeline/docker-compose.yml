@@ -14,7 +14,7 @@ services:
         condition: service_healthy
     networks:
       - app-net
-    restart: "no"
+    restart: "no"  # behavior on crash; in production, consider "on-failure" or "always"
 
   db:
     image: postgres:16
@@ -24,15 +24,20 @@ services:
     environment:
       POSTGRES_USER: ${PG_USER}
       POSTGRES_PASSWORD: ${PG_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_DB: ${DB_NAME}  # this will create the database on container startup
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5433:5432"
+      - "5433:5432"  # port 5432 on host is likely already taken by a local Postgres; we map to 5433 for host access
     networks:
       - app-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d ${DB_NAME} || exit 1"]
+      # will pass even if PG_USER or DB_NAME do not exist - expected behavior of pg_isready
+      #test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d ${DB_NAME} || exit 1"]  
+      
+      # this healthcheck is more robust and will cause the container to stop if PG_USER or DB_NAME do not exist
+      test: ["CMD-SHELL", "psql -U ${PG_USER} -d ${DB_NAME} -c 'SELECT 1' || exit 1"]
+      
       interval: 5s
       timeout: 5s
       retries: 10
