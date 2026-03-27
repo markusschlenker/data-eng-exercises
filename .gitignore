@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
+.dbenv*/
+.venv*/
 logs/
-.dbenv/
 .env
 .vscode/
