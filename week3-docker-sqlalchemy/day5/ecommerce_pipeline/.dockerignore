@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+venv.bak/
+.git
+.gitignore
+.DS_Store
+.env
+*.egg-info
+dist/
+build/
+.idea/
+.vscode/
+data/*.csv        # prevent copying large CSVs into image; we bind-mount ./data instead
+logs/
