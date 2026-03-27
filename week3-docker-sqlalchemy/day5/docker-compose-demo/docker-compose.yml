@@ -1,0 +1,12 @@
+version: "3.9" 
+ 
+services: 
+  python-service: 
+    container_name: python_compose_app1
+    build: 
+      context: . 
+      dockerfile: Dockerfile 
+    volumes: 
+      - ./app:/app    # optional: allows editing code without rebuilding 
+    command: ["sh", "-c", "python app.py && tail -f /dev/null"]
+    #command:  ["python","app.py"]
