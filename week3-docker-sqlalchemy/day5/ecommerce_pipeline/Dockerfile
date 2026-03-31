@@ -11,4 +11,5 @@ COPY . .
 
 ENV PYTHONUNBUFFERED=1
 
+#CMD ["pip", "freeze"]
 CMD ["python", "app.py"]
