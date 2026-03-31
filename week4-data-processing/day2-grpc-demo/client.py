@@ -4,9 +4,13 @@ import hello_pb2_grpc
 
 def run():
     channel = grpc.insecure_channel("localhost:50051")
-    stub = hello_pb2_grpc.HelloStub(channel)
 
+    stub = hello_pb2_grpc.HelloStub(channel)
     response = stub.Say(hello_pb2.Name(name="Alice"))
+    print(response.message)
+
+    stub = hello_pb2_grpc.HelloShoutStub(channel)
+    response = stub.Shout(hello_pb2.Name(name="Alice"))
     print(response.message)
 
 if __name__ == "__main__":

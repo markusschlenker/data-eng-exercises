@@ -4,9 +4,16 @@ service Hello {
   rpc Say (Name) returns (Greeting);
 }
 
-message Name {
-  string name = 1;
+service HelloShout {
+  rpc Shout (Name) returns (Greeting);
 }
+
+message Name {
+  // field_name = name, field_number = 1
+  string name = 1;
+  //int32 age = 2;
+}
+// actually sends sth. like: {field_number = 1, value = "Alice"}
 
 message Greeting {
   string message = 1;
