@@ -5,6 +5,14 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile 
+    env_file:
+      - .env
+    environment: 
+      POSTGRES_HOST: ${PG_HOST}
+      POSTGRES_PORT: 5432  # default, unchanged in db service
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     depends_on:
       my-database-service:
         condition: service_healthy
@@ -31,3 +39,5 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+
