@@ -41,3 +41,35 @@ Ref: https://github.com/neuefische/de-week-4-Data-Processing-Fundamentals/blob/m
 
 ## Start with the exercise based on instructions in Ref at top of this readme
 
+
+## Exercise part 4 steps - Metabase
+
+1. Follow instructions [here](https://www.metabase.com/docs/latest/installation-and-operation/running-metabase-on-docker)
+
+    ```bash
+    docker pull metabase/metabase:latest
+    docker run -d -p 3000:3000 --name metabase metabase/metabase
+    ```
+
+1. Connect to metabase container in browser at http://localhost:3000/
+
+1. Setup
+   - user: abs@niceto.com
+   - PW: 1metabase
+   - host: host.docker.internal 
+     Note that metabase tries to connect to the database from within the container and therefore
+     `localhost` referes to the container internals. If the metabase container is added in the
+     docker-compose.yml as a separate service, it should be connectable with 
+
+### Alternatively connect at container startup
+
+```bash
+docker run -d -p 3001:3000 \
+  -e "MB_DB_TYPE=postgres" \
+  -e "MB_DB_DBNAME=db_northwind" \
+  -e "MB_DB_PORT=5434" \
+  -e "MB_DB_USER=postgres" \
+  -e "MB_DB_PASS=admin" \
+  -e "MB_DB_HOST=host.docker.internal" \
+   --name metabase_cli_startup metabase/metabase
+```
