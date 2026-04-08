@@ -1,0 +1,9 @@
+order_id,product_name,category,price,quantity,order_date
+1001,Laptop,Electronics,1200.0,1,2023-10-26
+1002,Mouse,Electronics,25.0,2,2023-10-26
+1003,"Book: ""The Alchemist""",Books,15.0,3,2023-10-26
+1004,T-Shirt,Apparel,20.0,5,2023-10-26
+1005,Keyboard,,75.0,2,2023-10-26
+1006,"Novel: ""Dune""",Books,18.0,2,2023-10-26
+1007,Jeans,Apparel,,3,2023-10-26
+1008,Monitor,Electronics,300.0,1,2023-10-26
