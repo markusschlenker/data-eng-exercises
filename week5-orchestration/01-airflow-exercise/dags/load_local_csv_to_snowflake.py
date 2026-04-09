@@ -27,14 +27,18 @@ def _snowflake_engine():
     for f in glob.glob('*', include_hidden=True):
         print(f"   {f}")
     os.chdir(pwd)
+    pwd = Path.cwd()
+    print("Current directory:", pwd)
 
 
-    credentials = dotenv_values(".env.snowflake.credentials")
+    base_dir = Path(__file__).resolve().parent  # dags folder
+    credentials = dotenv_values(base_dir / ".env.snowflake.credentials", verbose=True)
 
     # debugging prints to see how special characters are mangled
+    print(len(credentials), credentials.keys())
     print(credentials["USERNAME"])
-    print(credentials["DEBUG_PASSWORD"])
-    print(quote_plus(credentials["DEBUG_PASSWORD"]))
+    print("DEBUG_PASSWORD as string  :", credentials["DEBUG_PASSWORD"])
+    print("DEBUG_PASSWORD html quoted:", quote_plus(credentials["DEBUG_PASSWORD"]))
 
     account = credentials["ACCOUNT"]                # "ABCDEF-GH12345"
     user = credentials["USERNAME"]                  # "USERNAME"
