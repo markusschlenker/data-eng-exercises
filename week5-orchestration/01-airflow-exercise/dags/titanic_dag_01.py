@@ -83,7 +83,9 @@ def titanic_taskflow_api_etl():
 
         Save cleaned data into a new CSV file
         """
-        data.to_csv('fct_titanic.csv')
+        print("PWD=", Path.cwd())
+        base_dir = Path(__file__).resolve().parent
+        data.to_csv(base_dir / 'fct_titanic.csv')
         print("Loading task complete")
         return None
 
