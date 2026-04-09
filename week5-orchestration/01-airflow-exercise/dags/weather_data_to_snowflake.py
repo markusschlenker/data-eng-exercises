@@ -1,3 +1,9 @@
+"""
+Week 5, Day 2, Activity 1: Extracting weather data and loading to Snowflake
+
+Details see:
+https://github.com/neuefische/de-week-5-Orchestrating-Modern-Data-Workflows/blob/main/02_airflow_dbt_snowflake_introduction/exercise/activity_1_extracting_weatherdata_and_loading_to_snowflake.md
+"""
 import os
 import logging
 import pendulum
@@ -86,6 +92,8 @@ def weather_data_to_snowflake():
             "lat": geo_dict["lat"],
             "lon": geo_dict["lon"],
             "appid": apikey,
+            "units": "metric",
+            "lang": "de",
         }
         resp = requests.get(endpoint, params=params)
         print(f"""{json.dumps(resp.json(), indent=2)}""")
@@ -93,10 +101,57 @@ def weather_data_to_snowflake():
         # explicit XCom push for testing
         ti.xcom_push(key="weather_data", value=resp.json())
 
+        # NOTE: WE RETURN A DICT HERE - NOT RAW JSON DATA - SHOULD BE STRING ?
         return resp.json()  # implicit XCom push as key='return_value'
+        #return resp.text  # raw json like this ?
 
     @task
-    def load():
+    def transform(data):
+        """
+        Transform json weather data
+
+        Details on API response:
+            https://openweathermap.org/current?collection=current_forecast#parameter
+        """
+        # flatten the json except 'weather' field
+        df = pd.json_normalize(data).drop(columns="weather")
+        df = pd.json_normalize(data).drop(columns="weather")
+        df = df.rename(columns={"id": "city_id", "name": "city"})
+        
+        # the 'weather' field is a list of records, can be more than one, first is primary condition
+        # see: https://openweathermap.org/weather-conditions
+        df_weather = pd.json_normalize(data, "weather", record_prefix="weather.")
+        if len(df_weather) > 1:
+            task_logger.info("More than 1 weather record found. Keeping only primary one.")
+        # we keep primary condition only
+        df_weather = df_weather[:1]
+
+        df_all_fields = df.join(df_weather)
+
+        # extract relevant fields
+        df = df_all_fields[["city", "main.temp", "main.humidity", "weather.description", "dt", "timezone"]]
+        df = df.rename(columns={
+            "main.temp": "temp",
+            "main.humidity": "humidity",
+            "weather.description": "weather_description",
+            "dt": "timestamp",
+        })
+        tz = pendulum.timezone(int(df.timezone[0]))
+        df["local_time"] = pendulum.from_timestamp(int(df.timestamp[0]), tz=tz).to_datetime_string()
+        return df.iloc[0].to_dict()
+    
+    @task
+    def load(data):
+        """
+        Load weather data to snowflake warehouse
+        """
+        df = pd.json_normalize(data)
+
+        base_dir = Path(__file__).resolve().parent  # dags folder
+        csv_file = base_dir / "weather_data_load_step.csv"
+        df.to_csv(csv_file)
+        task_logger.info(f"Dumped parsed data in load step to {csv_file}")
+
         #table_name = "WEATHER_DATA"
         table_name = "weather_data"  # airflow logs complain about all caps table name and recommends lower case table name
         engine = _snowflake_engine()
@@ -117,7 +172,8 @@ def weather_data_to_snowflake():
                 method="multi",
             )
 
-    api_call() >> load()
+    
+    load(transform(api_call()))
 
 
 # Instantiate the DAG
