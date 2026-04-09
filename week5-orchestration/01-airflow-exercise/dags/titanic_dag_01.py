@@ -8,7 +8,6 @@ Based on instructions in
 Example from Airflow tutorial used as template:
     https://airflow.apache.org/docs/apache-airflow/3.2.0/tutorial/taskflow.html
 """
-import json
 import pendulum
 import pandas as pd
 from pathlib import Path
@@ -25,6 +24,9 @@ default_args = {
     start_date=pendulum.datetime(2026, 4, 1, tz="UTC"),  # some date in the past
     catchup=False,
     tags=["etl", "example"],
+    access_control={
+        'team_alpha_role': {'can_read', 'can_edit'}
+    },
 )
 def titanic_taskflow_api_etl():
     """
