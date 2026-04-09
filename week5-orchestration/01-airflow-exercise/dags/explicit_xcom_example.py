@@ -7,13 +7,14 @@ def explicit_xcom_example():
 
     @task
     def push_task(ti=None):
-        ti.xcom_push(key="my_key", value="Custom XCom Data")
+        # ti = task_instance
+        ti.xcom_push(key="my_key", value="Custom XCom Data")  # storage in metadata database via key:value
 
     @task
     def pull_task(ti=None):
-        data = ti.xcom_pull(task_ids="push_task", key="my_key")
+        data = ti.xcom_pull(task_ids="push_task", key="my_key")  # retrieval from metadata database via key:value
         print(f"Explicitly pulled: {data}")
 
-    push_task() >> pull_task()
+    push_task() >> pull_task()  # mandatory, because Airflow cannot determine the order implicitely
 
 explicit_xcom_example()
