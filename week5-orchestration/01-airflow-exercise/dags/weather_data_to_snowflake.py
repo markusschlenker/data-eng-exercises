@@ -12,7 +12,8 @@ import requests
 import json
 from urllib.parse import quote_plus
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)  # results in logger name like "unusual_prefix_c3993553fb0abb7e191c8230049053384b74bae2_weather_data_to_snowflake"
+task_logger = logging.getLogger("task")
 
 SNOWFLAKE_DATABASE = "SNOWFLAKE_LEARNING_DB"
 SNOWFLAKE_SCHEMA = "PUBLIC"
@@ -72,10 +73,12 @@ def weather_data_to_snowflake():
         resp = requests.get(endpoint, params=params)
         if resp.status_code == 200:
             geo_dict = resp.json()[0]
+            task_logger.warning(f"For testing.")
         else:
-            print(f"WARNING: Unexpected response status {resp.status_code} from OpenWeather Geocoding API . Using default location.")
-            logger.warning(f"Unexpected response status {resp.status_code} from OpenWeather Geocoding API . Using default location.")
-            geo_dict = {'name': 'Würzburg', 'lat': 49.79245, 'lon': 9.932966, 'country': 'DE', 'state': 'Bavaria'}
+            task_logger.warning(f"Unexpected response status {resp.status_code} "
+                                "from OpenWeather Geocoding API. Using default location.")
+            geo_dict = {'name': 'Würzburg', 'lat': 49.79245, 'lon': 9.932966,
+                        'country': 'DE', 'state': 'Bavaria'}
 
         # get weather data for city
         endpoint = "https://api.openweathermap.org/data/2.5/weather"
