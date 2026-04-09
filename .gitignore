@@ -3,6 +3,7 @@ __pycache__/
 .dbenv*/
 .venv*/
 logs/
-.env
+.env*
+!.env.example
 .vscode/
 .~lock*
