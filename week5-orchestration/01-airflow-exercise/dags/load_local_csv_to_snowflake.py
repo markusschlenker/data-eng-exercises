@@ -2,17 +2,44 @@ import os
 import pendulum
 import pandas as pd
 from pathlib import Path
+import glob
 from airflow.decorators import dag, task
 from sqlalchemy import create_engine
+from dotenv import dotenv_values
 
 from urllib.parse import quote_plus
 def _snowflake_engine():
     """
     Build a SQLAlchemy engine for Snowflake.
+
+    Get credentials from Snowflake "Account Details" section
     """
-    account = "ABCDEF-GH12345"
-    user = "USERNAME"
-    password = quote_plus("the-secret-password")
+
+    # debugging prints
+    pwd = Path.cwd()
+    print("Current directory:", pwd)
+    try:
+        os.chdir('dags')
+        print("Changing to 'dags' folder")
+    except FileNotFoundError:
+        print("Already in 'dags' folder")
+    print("Local files listing:")
+    for f in glob.glob('*', include_hidden=True):
+        print(f"   {f}")
+    os.chdir(pwd)
+
+
+    credentials = dotenv_values(".env.snowflake.credentials")
+
+    # debugging prints to see how special characters are mangled
+    print(credentials["USERNAME"])
+    print(credentials["DEBUG_PASSWORD"])
+    print(quote_plus(credentials["DEBUG_PASSWORD"]))
+
+    account = credentials["ACCOUNT"]                # "ABCDEF-GH12345"
+    user = credentials["USERNAME"]                  # "USERNAME"
+    password = quote_plus(credentials["PASSWORD"])  # quote_plus("the-secret-password")
+
     database = "SNOWFLAKE_LEARNING_DB"
     schema = "PUBLIC"
     warehouse = "COMPUTE_WH"
@@ -29,7 +56,7 @@ def _snowflake_engine():
     dag_id="load_local_csv_to_snowflake",
     start_date=pendulum.datetime(2025, 1, 1, tz="UTC"),
     schedule=None,
-    catchup=False,
+    catchup=False,  # no backfilling
     tags=["snowflake", "etl", "local-file"],
 )
 def load_local_csv_to_snowflake():
