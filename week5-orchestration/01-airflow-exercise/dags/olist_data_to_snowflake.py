@@ -10,6 +10,7 @@ import shutil
 import logging
 import typing
 import pendulum
+import pandas as pd
 from pathlib import Path
 import kagglehub
 from contextlib import contextmanager
@@ -44,9 +45,6 @@ def _download_olist_files():
     """
     Download Kaggle Olist dataset
     """
-    base_dir = Path(__file__).resolve().parent  # dags dir
-    path_olist = base_dir / "data_olist"
-
     # Download latest version
     path = kagglehub.dataset_download("olistbr/brazilian-ecommerce", output_dir=PATH_OLIST)
     logger.info(f"Path to dataset files: {path}")
@@ -61,14 +59,29 @@ def _download_olist_files():
         
     return str(path)
 
-def _clean_olist_files(path_olist: typing.Union[str, bytes, os.PathLike]):
-    path_olist = Path(path_olist)
+def _clean_olist_files():
     if PATH_OLIST.is_dir():
         shutil.rmtree(PATH_OLIST)
-
     logger.info(f"Deleted path: {PATH_OLIST}")
-    logger.info(f"Still exists? {PATH_OLIST.exists()}")
+    logger.info(f"Verify removal: path still exists? {PATH_OLIST.exists()}")
     return None
+
+def _extract_single_csv(csv_file: typing.Union[str, bytes, os.PathLike]):
+    csv_path = PATH_OLIST / csv_file
+
+    if not csv_path.exists() or csv_path.lstat().st_size == 0:
+        return f"File {csv_path} missing or empty."
+    
+    iterchunks = pd.read_csv(csv_path, chunksize=50_000)
+
+    df = next(iterchunks)
+    columns = [c.upper() for c in df.columns]
+
+
+    with open(PATH_OLIST / (csv_file + ".df.import.test"), "w") as f:
+        f.write(df.head(10).to_string())
+        logger.info(f"dumped df.head to {f.name}")
+    pass    
 
 ########################################################################################################################
 
@@ -83,14 +96,13 @@ def olist_data_to_snowflake():
 
     @setup
     def download_olist_files():
-        """
-        Download Kaggle Olist dataset
-        """
+        """Download Kaggle Olist dataset"""
         return _download_olist_files()
     
     @task
-    def extract():
-        pass
+    def extract_single_csv(csv_file: typing.Union[str, bytes, os.PathLike]):
+        _extract_single_csv(csv_file)
+        return
     
     @task
     def dummy(xxx):
@@ -102,16 +114,14 @@ def olist_data_to_snowflake():
 
     @teardown
     def clean_olist_files():
-        """
-        Remove Kaggle Olist dataset after loading to warehouse
-        """
-        _clean_olist_files(PATH_OLIST)
-        raise FileNotFoundError("asdasd")
+        """Remove Kaggle Olist dataset after loading to warehouse"""
+        _clean_olist_files()
         return None
     
     setup_obj = download_olist_files()
     teardown_obj = clean_olist_files()
-    setup_obj >> dummy(PATH_OLIST) >> teardown_obj
+
+    setup_obj >> dummy(PATH_OLIST) >> extract_single_csv(EXPECTED_OLIST_FILES[0]) >> teardown_obj
     setup_obj >> teardown_obj
 
 
@@ -122,4 +132,7 @@ if __name__ == "__main__":
     #olist_data_to_snowflake_dag.test()
     olist_path =_download_olist_files()
     time.sleep(0.5)
-    _clean_olist_files(olist_path)
+    _extract_single_csv(EXPECTED_OLIST_FILES[0])
+    _extract_single_csv(EXPECTED_OLIST_FILES[-1])
+    time.sleep(0.5)
+    #_clean_olist_files()
