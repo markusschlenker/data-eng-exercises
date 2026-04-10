@@ -14,7 +14,13 @@ with source_data as (
     select 1 as id
     union all
     select null as id
+    /*
+        this concatenates 2 lines to table like
 
+        id
+        1
+        null
+    */
 )
 
 select *
