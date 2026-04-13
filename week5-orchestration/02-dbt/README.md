@@ -60,10 +60,13 @@ Add custom schema in `dbt_project.yml`
 Run the fact model
 * `dbt run --select +dbt_demo_fact_orders.sql`
 
+# Activity 0
+
+Code along from [here](https://github.com/neuefische/de-week-5-Orchestrating-Modern-Data-Workflows/blob/main/03_dbt_in_depth/03_dbt_in_depth.md#3-getting-started-with-your-first-dbt-project)
 
 # Activity 1
 
-[activity1](https://github.com/neuefische/de-week-5-Orchestrating-Modern-Data-Workflows/blob/main/03_dbt_in_depth/exercise/activity_1_dbt_model_order_geography.md)
+[day 3, activity 1](https://github.com/neuefische/de-week-5-Orchestrating-Modern-Data-Workflows/blob/main/03_dbt_in_depth/exercise/activity_1_dbt_model_order_geography.md)
 
 ## Pre-Steps
 
@@ -74,4 +77,24 @@ Configure and setup project
 
 ## Activity steps
 
+Create models
 
+
+
+# Activity 2
+
+[day 3, activity 2](https://github.com/neuefische/de-week-5-Orchestrating-Modern-Data-Workflows/blob/main/03_dbt_in_depth/exercise/activity_2_seller_performance_analysis.md)
+
+Same procedure as for previous
+
+
+
+# Activity 3
+
+[day 4, activity 1](https://github.com/neuefische/de-week-5-Orchestrating-Modern-Data-Workflows/blob/main/04_dbt_test_documents_lineage/exercise/activity_1_add_documentation_test_cases.md)
+
+## Pre-Steps
+
+Configure and setup project
+
+* edit ~/.dbt/profiles.yml
