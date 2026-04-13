@@ -5,6 +5,26 @@ version: 2
 models:
   - name: fct_orders
     description: "olist orders model"
+
+    columns:
+      - name: order_purchase_year
+        description: "Purchase year of the order"
+        data_tests:
+          - not_null
+
+      - name: order_status
+        description: "Status of the order"
+        data_tests:
+          - not_null
+
+      - name: cnt_distinct_order
+        description: "Total number of distinct orders"
+
+      - name: cnt_distinct_customer
+        description: "Total number of distinct customers"
+
+  - name: fct_orders_geography
+    description: "olist model adding geographical info to orders"
     
     columns:
       - name: order_purchase_year
@@ -14,6 +34,16 @@ models:
 
       - name: order_status
         description: "Status of the order"
+        data_tests:
+          - not_null
+
+      - name: customer_city
+        description: "Customer city"
+        data_tests:
+          - not_null
+
+      - name: customer_state
+        description: "Customer state"
         data_tests:
           - not_null
 
