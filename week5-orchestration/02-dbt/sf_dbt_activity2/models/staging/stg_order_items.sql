@@ -5,7 +5,8 @@ with order_items as (
         product_id,
         seller_id,
         cast(shipping_limit_date as timestamp) as shipping_limit_date,
-        price,
+        price as price_raw,
+        cast(price as decimal(10,2)) as price,
         freight_value
     from {{ source('olist', 'OLIST_ORDER_ITEMS_DATASET') }}
 )

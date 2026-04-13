@@ -7,7 +7,8 @@ with sales as (
 )
 select
     seller_id,
+    sum(price) as total_sales_dollar,
     count(order_id) as cnt_orders,
-    sum(price) as total_sales_dollar
+    count(DISTINCT order_id) as cnt_orders_dist  -- in case multiple items from one order_id - not the case here
 from sales
 group by seller_id
