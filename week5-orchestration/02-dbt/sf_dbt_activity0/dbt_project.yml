@@ -31,12 +31,15 @@ clean-targets:         # directories to be removed by `dbt clean`
 # files using the `{{ config(...) }}` macro.
 models:
   sf_dbt_activity0:
-    staging:
-      +schema: dbt_demo_activity0
+    +schema: dbt_demo_activity0__stg  # config schema for all, except overwritten below, or in model itself
+
     intermed:
-      +schema: dbt_demo_activity0
+      +schema: dbt_demo_activity0__int
+    
+    # marts schema configured in dbt_demo_fct_orders.sql
     marts:
-      +schema: dbt_demo_activity0
+      +schema: dbt_demo_activity0__mrt
+
     # Config indicated by + and applies to all files under models/example/
     example:
       +materialized: view

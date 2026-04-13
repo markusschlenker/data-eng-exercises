@@ -1,5 +1,6 @@
 {{ config(
-    materialized='table'
+    materialized='table',
+    schema='dbt_demo_activity0__BI_MARTS',
 ) }}
 
 select
