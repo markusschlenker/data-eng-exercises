@@ -5,13 +5,20 @@ version: 2
 models:
   - name: fct_orders
     description: "olist orders model"
+    
     columns:
       - name: order_purchase_year
         description: "Purchase year of the order"
         data_tests:
           - not_null
+
       - name: order_status
         description: "Status of the order"
         data_tests:
           - not_null
 
+      - name: cnt_distinct_order
+        description: "Total number of distinct orders"
+
+      - name: cnt_distinct_customer
+        description: "Total number of distinct customers"
