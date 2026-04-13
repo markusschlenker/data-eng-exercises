@@ -1,0 +1,17 @@
+
+version: 2
+
+# Add test cases to ensure ORDER_PURCHASE_YEAR and ORDER_STATUS are not null.
+models:
+  - name: fct_orders
+    description: "olist orders model"
+    columns:
+      - name: order_purchase_year
+        description: "Purchase year of the order"
+        data_tests:
+          - not_null
+      - name: order_status
+        description: "Status of the order"
+        data_tests:
+          - not_null
+
