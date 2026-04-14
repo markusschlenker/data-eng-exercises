@@ -1,0 +1,13 @@
+sf_dbt_weekly_project:
+  outputs:
+    dev:
+      account: *******-*******
+      database: SNOWFLAKE_LEARNING_DB
+      password: ****************
+      role: ACCOUNTADMIN
+      schema: WEEK5_PROJ
+      threads: 1
+      type: snowflake
+      user: *************
+      warehouse: COMPUTE_WH
+  target: dev

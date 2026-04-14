@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: fct_product_performance
+    description: "Aggregated product performance metrics at product_category level"
+    columns:
+      - name: product_category_name
+        description: "Product category"
+        tests:
+          - not_null:
+              config:
+                severity: warn
+          - unique:
+              config:
+                severity: warn
+
+      - name: total_sales
+        description: "Total sales revenue (price + freight)"
+        tests:
+          - not_null:
+              config:
+                severity: warn
