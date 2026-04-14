@@ -98,3 +98,14 @@ Same procedure as for previous
 Configure and setup project
 
 * edit ~/.dbt/profiles.yml
+
+
+# Week 5 weekly project
+
+[instructions](https://github.com/markusschlenker/nf-de-week-5-Orchestrating-Modern-Data-Workflows/blob/main/05_weekly_project/instructions.md)
+
+Coach instructed us basically to copy the project dir `week-5-product-perf-mart` and play around with it.
+
+The dbt `profiles.yml` usually stored in `~/.dbt/profiles.yml` needs to be copied to the project
+directory to be available in the container via the volume connection.
+
