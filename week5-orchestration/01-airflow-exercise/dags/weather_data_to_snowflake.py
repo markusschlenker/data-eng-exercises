@@ -115,7 +115,6 @@ def weather_data_to_snowflake():
         """
         # flatten the json except 'weather' field
         df = pd.json_normalize(data).drop(columns="weather")
-        df = pd.json_normalize(data).drop(columns="weather")
         df = df.rename(columns={"id": "city_id", "name": "city"})
         
         # the 'weather' field is a list of records, can be more than one, first is primary condition
@@ -138,17 +137,19 @@ def weather_data_to_snowflake():
         })
         tz = pendulum.timezone(int(df.timezone[0]))
         df["local_time"] = pendulum.from_timestamp(int(df.timestamp[0]), tz=tz).to_datetime_string()
-        return df.iloc[0].to_dict()
+        #return df.iloc[0].to_dict()
+        return df.to_dict()
     
     @task
     def load(data):
         """
         Load weather data to snowflake warehouse
         """
-        df = pd.json_normalize(data)
+        df = pd.DataFrame(data)
 
         base_dir = Path(__file__).resolve().parent  # dags folder
         csv_file = base_dir / "weather_data_load_step.csv"
+        #df.to_csv(csv_file, index=False)
         df.to_csv(csv_file)
         task_logger.info(f"Dumped parsed data in load step to {csv_file}")
 
@@ -163,7 +164,13 @@ def weather_data_to_snowflake():
             conn.exec_driver_sql(f"DROP TABLE IF EXISTS {table_name}")
 
             # Load data
-            df = pd.DataFrame({"id": [1,2,3], "price": [1.2, 3.1, 5.0]})  # test data
+            df = pd.read_csv(csv_file, index_col=0)
+            df2 = df.copy()
+            df2["temp"] = 10
+            df3 = df.copy()
+            df3["humidity"] = 12
+            df = pd.concat([df,df2,df3], ignore_index=True)
+            print(df.to_string())
             df.to_sql(
                 name=table_name,
                 con=conn,

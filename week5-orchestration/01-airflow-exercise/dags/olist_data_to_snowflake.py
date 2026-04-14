@@ -15,6 +15,9 @@ from pathlib import Path
 import kagglehub
 from contextlib import contextmanager
 from tqdm import tqdm
+from sqlalchemy import create_engine, text
+from dotenv import dotenv_values
+from urllib.parse import quote_plus
 
 from airflow.sdk import dag, task, setup, teardown
 
@@ -24,6 +27,42 @@ logger = logging.getLogger("airflow.task")
 ########################################################################################################################
 # utility
 #
+SNOWFLAKE_DATABASE = "SNOWFLAKE_LEARNING_DB"
+# SNOWFLAKE_SCHEMA = "PUBLIC"
+SNOWFLAKE_SCHEMA = "RAW_OLIST"
+SNOWFLAKE_WAREHOUSE = "COMPUTE_WH"
+
+def _snowflake_engine():
+    """
+    Build a SQLAlchemy engine for Snowflake.
+
+    Get credentials from Snowflake "Account Details" section
+    """
+    base_dir = Path(__file__).resolve().parent  # dags folder
+    credentials = dotenv_values(base_dir / ".env.snowflake.credentials", verbose=True)
+
+    account = credentials["ACCOUNT"]                # "ABCDEF-GH12345"
+    user = credentials["USERNAME"]                  # "USERNAME"
+    password = quote_plus(credentials["PASSWORD"])  # quote_plus("the-secret-password") - HTML quoted
+
+    database = SNOWFLAKE_DATABASE
+    schema = SNOWFLAKE_SCHEMA
+    warehouse = SNOWFLAKE_WAREHOUSE
+    role = "ACCOUNTADMIN"
+
+    url = (
+        f"snowflake://{user}:{password}@{account}/{database}"
+        f"?warehouse={warehouse}&role={role}"
+    )
+    engine = create_engine(url)
+    with engine.begin() as conn:
+        # conn.execute(
+        #     text("CREATE SCHEMA IF NOT EXISTS :schema_name"),
+        #     {"schema_name": schema},
+        # )
+        conn.exec_driver_sql(f"CREATE SCHEMA IF NOT EXISTS  {schema}")
+
+    return engine
 
 ########################################################################################################################
 # business logic
@@ -66,22 +105,81 @@ def _clean_olist_files():
     logger.info(f"Verify removal: path still exists? {PATH_OLIST.exists()}")
     return None
 
-def _extract_single_csv(csv_file: typing.Union[str, bytes, os.PathLike]):
+def _etl_single_csv(csv_file: typing.Union[str, bytes, os.PathLike]):
     csv_path = PATH_OLIST / csv_file
 
     if not csv_path.exists() or csv_path.lstat().st_size == 0:
         return f"File {csv_path} missing or empty."
     
-    iterchunks = pd.read_csv(csv_path, chunksize=50_000)
+    logging.info(f"Extracting {csv_path}")
+    iterchunks = pd.read_csv(csv_path, chunksize=5000)
 
-    df = next(iterchunks)
-    columns = [c.upper() for c in df.columns]
+    chunk = next(iterchunks)
+    columns = [c.upper() for c in chunk.columns]
+    chunk.columns = columns
+
+    engine = _snowflake_engine()
+    table_name = Path(csv_file).stem.upper()
+    logging.info(f"Laoding into snowflake warehause in table {table_name}")
+
+    with engine.begin() as conn:
+        conn.exec_driver_sql(f"USE WAREHOUSE {SNOWFLAKE_WAREHOUSE}")
+        conn.exec_driver_sql(f"USE DATABASE {SNOWFLAKE_DATABASE}")
+        conn.exec_driver_sql(f"USE SCHEMA {SNOWFLAKE_SCHEMA}")
+        
+        # # only for debugging !!
+        # logging.info(f"DEBUG: dropping table {table_name}")
+        # logging.debug(f"DEBUG: dropping table {table_name}")
+        # conn.exec_driver_sql(f"DROP TABLE IF EXISTS {table_name}")
+        # conn.exec_driver_sql(f"DROP TABLE IF EXISTS LOADED_FILES")
+        # return ""
+
+        # Create control table if not exists
+        conn.exec_driver_sql("""
+            CREATE TABLE IF NOT EXISTS  LOADED_FILES (
+                FILE_NAME STRING PRIMARY KEY,
+                LOAD_TIMESTAMP TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # check of data already loaded for this csv file
+        result = conn.execute(
+            text("SELECT COUNT(*) FROM  LOADED_FILES  WHERE FILE_NAME = :file"),
+            {"file": csv_file},
+        )
+        if result.scalar() > 0:
+            logger.info(f"Skipping loading for {csv_file}. Already loaded.")
+            return "skipped"
+
+        num_chunk = 1
+        logging.info(f"Adding chunk {num_chunk}")
+        params = {
+            "name": table_name.lower(),  # use lower() to avoid pandas/sqlalchemy UserWarning, table create as upper case in Snowflake
+            "con": conn,
+            "if_exists": "replace",
+            "index": False,
+            "method": "multi",
+        }
+        params.update({"if_exists": "append"})
+        chunk.to_sql(**params)
+
+        for chunk in iterchunks:
+            num_chunk += 1
+            logging.info(f"Adding chunk {num_chunk}")
+            chunk.columns = columns
+            chunk.to_sql(**params)
+        logging.info(f"Completed adding data from {csv_file} to {table_name}")
+
+        # conn.exec_driver_sql(f"""
+        #     INSERT INTO  LOADED_FILES(FILE_NAME)  VALUES('{csv_file}')
+        # """)
+        conn.execute(
+            text("INSERT INTO LOADED_FILES(FILE_NAME) VALUES(:file)"),
+            {"file": csv_file},
+        )
 
 
-    with open(PATH_OLIST / (csv_file + ".df.import.test"), "w") as f:
-        f.write(df.head(10).to_string())
-        logger.info(f"dumped df.head to {f.name}")
-    pass    
+    return "loaded"    
 
 ########################################################################################################################
 
@@ -101,17 +199,9 @@ def olist_data_to_snowflake():
     
     @task
     def extract_single_csv(csv_file: typing.Union[str, bytes, os.PathLike]):
-        _extract_single_csv(csv_file)
+        _etl_single_csv(csv_file)
         return
     
-    @task
-    def dummy(xxx):
-        print(f"dummy {xxx}")
-        for f in os.listdir(xxx):
-            print(f)
-        return None
-
-
     @teardown
     def clean_olist_files():
         """Remove Kaggle Olist dataset after loading to warehouse"""
@@ -121,7 +211,9 @@ def olist_data_to_snowflake():
     setup_obj = download_olist_files()
     teardown_obj = clean_olist_files()
 
-    setup_obj >> dummy(PATH_OLIST) >> extract_single_csv(EXPECTED_OLIST_FILES[0]) >> teardown_obj
+    extractors = [extract_single_csv(f) for f in EXPECTED_OLIST_FILES]
+
+    setup_obj >> extractors >> teardown_obj
     setup_obj >> teardown_obj
 
 
@@ -132,7 +224,7 @@ if __name__ == "__main__":
     #olist_data_to_snowflake_dag.test()
     olist_path =_download_olist_files()
     time.sleep(0.5)
-    _extract_single_csv(EXPECTED_OLIST_FILES[0])
-    _extract_single_csv(EXPECTED_OLIST_FILES[-1])
+    _etl_single_csv(EXPECTED_OLIST_FILES[0])
+    _etl_single_csv(EXPECTED_OLIST_FILES[-1])
     time.sleep(0.5)
     #_clean_olist_files()

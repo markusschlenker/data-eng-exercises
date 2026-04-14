@@ -2,7 +2,12 @@ from airflow.decorators import dag, task
 from airflow.models import XCom
 from datetime import datetime
 
-@dag(schedule=None, start_date=datetime(2023, 1, 1), catchup=False)
+@dag(
+    dag_id="explicit_xcom_example",
+    schedule=None,
+    start_date=datetime(2023, 1, 1),
+    catchup=False,
+)
 def explicit_xcom_example():
 
     @task
