@@ -7,3 +7,5 @@ logs/
 !.env.example
 .vscode/
 .~lock*
+dbt*.log
+.ipynb_checkpoints/
