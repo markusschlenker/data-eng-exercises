@@ -147,6 +147,7 @@ services:
   notebook:
     image: jupyter/base-notebook:latest
     container_name: notebook
+    # notebook will be available at: http://127.0.0.1:8890/lab?token=dev
     ports:
       - "8890:8888"
     volumes:
