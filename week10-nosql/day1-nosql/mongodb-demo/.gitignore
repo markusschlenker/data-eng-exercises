@@ -1,2 +1,5 @@
 nosql-data/
 data/
+employee.csv
+users.json
+nosql_db_backup/
