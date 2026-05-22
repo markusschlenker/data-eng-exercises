@@ -98,8 +98,27 @@ def dbt_snowflake_pipeline():
             "pwd && ls && "
             #" rm -rf dbt_packages"
             "type dbt && "
-            f"dbt deps --profiles-dir {SF_DBT_PROJECT_DIR} > dbt_deps.log 2>&1 && "
-            "cat dbt_deps.log"
+            f"dbt deps --profiles-dir {SF_DBT_PROJECT_DIR} > dbt_deps.log 2>&1"
+        ,
+        do_xcom_push=False,
+    )
+
+    dbt_debug = BashOperator(
+        task_id="dbt_debug",
+        bash_command="echo 'check correct setup' && "
+            f"cd {SF_DBT_PROJECT_DIR} &&"
+            "pwd && ls && "
+            f"dbt debug --profiles-dir {SF_DBT_PROJECT_DIR} > dbt_debug.log 2>&1 "
+        ,
+        do_xcom_push=False,
+    )
+
+    dbt_test = BashOperator(
+        task_id="dbt_test",
+        bash_command="echo 'doing tests' && "
+            f"cd {SF_DBT_PROJECT_DIR} &&"
+            "pwd && "
+            f"dbt test --profiles-dir {SF_DBT_PROJECT_DIR} > dbt_test.log 2>&1"
         ,
         do_xcom_push=False,
     )
@@ -109,13 +128,12 @@ def dbt_snowflake_pipeline():
         bash_command="echo 'doing run' && "
             f"cd {SF_DBT_PROJECT_DIR} &&"
             "pwd && "
-            f"dbt run --profiles-dir {SF_DBT_PROJECT_DIR} > dbt_run.log 2>&1 && "
-            "cat dbt_run.log"
+            f"dbt run --profiles-dir {SF_DBT_PROJECT_DIR} > dbt_run.log 2>&1"
         ,
         do_xcom_push=False,
     )
 
-    dummy >> dbt_init >> dbt_run
+    dummy >> dbt_init >> dbt_debug >> dbt_run >> dbt_test
 
 
 dbt_snowflake_pipeline_dag = dbt_snowflake_pipeline()
