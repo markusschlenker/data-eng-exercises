@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  spark-jupyter:
+    image: jupyter/pyspark-notebook:latest
+    container_name: spark-jupyter
+    ports:
+      - "8889:8888"
+    volumes:
+      - ./notebooks:/home/jovyan/work
+    environment:
+      - GRANT_SUDO=yes
+
+networks:
+  spark-network:
+    driver: bridge
