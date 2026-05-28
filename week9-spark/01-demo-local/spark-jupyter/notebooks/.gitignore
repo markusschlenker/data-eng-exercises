@@ -1,0 +1,4 @@
+.ipynb_checkpoints/
+output/
+data/saved_rdd.txt
+data/owid-covid-data.csv
